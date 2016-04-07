@@ -1,0 +1,40 @@
+-- VERSION_4
+-- START DISKCACHE_2
+J:\python\.metadata\.plugins\org.eclipse.core.resources\.projects\MessageProcess\com.python.pydev.analysis\v2_indexcache
+src.pojo.__init__|1459816814436319000|J:\python\MessageProcess\src\pojo\__init__.py
+src.pojo.DataBean|1459816875321465000|J:\python\MessageProcess\src\pojo\DataBean.py
+src.main.Utils|1459821759358872000|J:\python\MessageProcess\src\main\Utils.py
+src.pojo.Attribue|1459821212503516000|J:\python\MessageProcess\src\pojo\Attribue.py
+src.main.__init__|1459821422924103000|J:\python\MessageProcess\src\main\__init__.py
+src.__init__|1459816621351741000|J:\python\MessageProcess\src\__init__.py
+-- END DISKCACHE
+-- START DICTIONARY
+7
+3=src.main.Utils
+2=src.pojo.DataBean
+7=Attribute.__init__
+6=DataBean.__init__
+5=Attribute
+1=src.pojo.Attribue
+4=DataBean
+-- END DICTIONARY
+-- START TREE 1
+4
+att|1|Attribute!9@
+dat|1|DataBean!17@
+pas|1|paser!26@
+v|1|v!27@
+-- END TREE
+-- START TREE 2
+10
+__i|2|__init__!4&18@__init__!5&10@
+att|1|attr!6&19@
+bra|1|brackets!7&11@
+cou|1|count!7&11@
+dat|1|data!7&11@
+get|2|getLabel!4&18@getData!4&18@
+lab|1|label!6&19@
+ori|1|originalText!7&11@
+pas|1|paser!5&10@
+uni|1|unit!7&11@
+-- END TREE

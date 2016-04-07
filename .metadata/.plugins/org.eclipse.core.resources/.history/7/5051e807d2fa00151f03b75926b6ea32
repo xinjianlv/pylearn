@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+def paser(text):
+    array = list(text);
+    

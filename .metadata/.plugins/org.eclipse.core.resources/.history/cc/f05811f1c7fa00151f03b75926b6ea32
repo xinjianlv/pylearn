@@ -1,0 +1,16 @@
+'''
+Created on 2016年4月5日
+
+@author: nocml
+'''
+
+class Attribute(object):
+    '''
+    
+    '''
+
+
+    def __init__(self, params):
+        self.full_name = None;
+        self.full_
+        

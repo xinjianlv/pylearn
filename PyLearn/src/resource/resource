@@ -1,0 +1,484 @@
+【例8-1】文本框JtextField的应用
+import java.awt.*;
+import javax.swing.*;
+import java.awt.event.*;
+//该类作为事件监听者，需要实现对应的接口
+public class JTextFieldDemo extends JFrame implements ActionListener {
+	private JLabel lb1, lb2;
+	private JTextField t1, t2;
+	public JTextFieldDemo() {
+		this.setLayout(new FlowLayout()); //设置布局管理
+		lb1 = new JLabel("请输入一个正整数：");// 创建标签对象字符串为提示信息
+		lb2 = new JLabel("1到该数的和为：");// 创建标签对象字符串为提示信息
+		t1 = new JTextField(10);// 创建输入文本框，最多显示10个字符
+		t2 = new JTextField(10);
+		this.add(lb1); // 将组件添加到窗口上
+		this.add(t1);
+		this.add(lb2);
+		this.add(t2);
+		t1.addActionListener(this);// 为文本框注册ActionEvent事件监听器
+		// 为窗口注册窗口事件监听程序，监听器以匿名类的形式进行
+		this.addWindowListener(new WindowAdapter() {// 匿名类开始
+					public void windowClosing(WindowEvent e){
+						System.exit(0);
+					} // 窗口关闭
+				});// 匿名类结束
+		this.setTitle("图书管理系统JTextField示例");//设置窗体标题
+		this.setSize(600, 450);//设置窗口大小
+		this.setVisible(true);//设置窗体的可见性
+	}
+	public void actionPerformed(ActionEvent e) { // ActionListener接口中方法的实现
+		// getText()获取文本框输入的内容，转换为整型数值
+		int n = Integer.parseInt(t1.getText());
+		int sum = 0;
+		for (int i = 1; i <= n; i++)
+			sum=sum+ i;
+		t2.setText(String.valueOf(sum)); // 修改文本框输出内容
+	}
+	public static void main(String[] arg) {
+		new JTextFieldDemo();
+	}
+}
+【例8-2】命令按钮和文本框域的使用
+import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.*;
+public class ChatGUI extends JFrame implements ActionListener {
+	Container container;
+	JButton send; // 发送按钮
+	JTextArea chatContent; // 聊天内容区
+	JTextField sentence; // 聊天信息栏
+	ChatGUI() {
+		super.setTitle("聊天窗口");// 设置窗口标题
+		this.setSize(400, 300); // 设置窗口大小
+		container = this.getContentPane(); // 获得主窗口的内容面板
+		container.setLayout(new BorderLayout()); // 设置布局方式为BorderLayout
+		JScrollPane centerPanel = new JScrollPane(); // 创建用于存放聊天记录的滚动面板
+		chatContent = new JTextArea(); // 创建存放聊天内容的多行文本输入区对象
+		centerPanel.setViewportView(chatContent); // 将文本区放入滚动面板
+		// 将滚动面板放到主窗口内容面板中央
+		container.add(centerPanel, BorderLayout.CENTER);
+		chatContent.setEditable(false); // 将文本区置为不可编辑状态
+		// 创建底部面板对象，存放聊天标签、聊天栏、发送按钮
+		JPanel bottomPanel = new JPanel();
+		sentence = new JTextField(20); // 创建文本输入行对象，存放每次的聊天内容
+		send = new JButton("发送"); // 创建按钮对象
+		bottomPanel.add(new JLabel("聊天信息")); // 将标签添加到底部面板
+		bottomPanel.add(sentence); // 把聊天内容栏添加到底部面板上
+		bottomPanel.add(send); // 把发送按钮添加到底部面板上
+		container.add(bottomPanel, BorderLayout.SOUTH);// 将底部面板放在主窗口的底部
+		send.addActionListener(this); // 注册发送按钮的动作事件
+		sentence.addActionListener(this); // 注册聊天栏的动作事件
+		this.setVisible(true); // 显示主窗口
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);// 关闭窗口时退出系统
+	}
+	public void actionPerformed(ActionEvent e) {
+		String str = sentence.getText(); // 获取聊天栏里的聊天信息
+		if (str != null && !str.equals("")) // 如果聊天内容不为空，则发送信息
+		  chatContent.append("本人:  " + str + "\n");// 将本人发送的聊天信息追加到聊天内容区
+		else
+			chatContent.append("聊天信息不能为空\n");
+		sentence.setText(""); // 清空聊天栏里的内容
+	}
+	public static void main(String[] arg) {
+		new ChatGUI();
+	}
+}
+【例8-3】JCheckBox的使用
+import java.awt.*;
+import javax.swing.*;
+import java.awt.event.*;
+//该类作为事件监听者，需要实现对应的ItemListener接口
+public class JCheckBoxDemo extends JFrame implements ItemListener {
+	private JLabel lb1; // 作为调色板，根据所选颜色不同它的颜色随之变化
+	private JCheckBox ckb1, ckb2, ckb3; // 代表红、绿、蓝三色是否选中的复选框
+	private Container container;
+	int red = 0, green = 0, blue = 0; // 三种颜色分量的值
+	public JCheckBoxDemo() {
+		container = this.getContentPane();
+		ckb1 = new JCheckBox("红色"); // 创建复选框对象，字符串为提示信息
+		ckb2 = new JCheckBox("绿色");
+		ckb3 = new JCheckBox("蓝色");
+		lb1 = new JLabel(); // 创建空标签作为调色板
+		lb1.setMaximumSize(new Dimension(150, 200)); // 设置尺寸
+		container.add(lb1, BorderLayout.CENTER); // 把组件添加到窗口上
+		JPanel p1 = new JPanel();
+		p1.add(ckb1);
+		p1.add(ckb2);
+		p1.add(ckb3);
+		// 为组件注册事件监听程序，对ItemEvent事件进行处理
+		ckb1.addItemListener(this);
+		ckb2.addItemListener(this);
+		ckb3.addItemListener(this);
+		container.add(p1, BorderLayout.SOUTH);
+		// 为窗口注册窗口事件监听程序，监听器以匿名类的形式进行
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);// 关闭窗口时退出系统
+		this.setTitle("图书管理系统JCheckBox示例");
+		this.setSize(600, 450);
+		this.setVisible(true);
+	}
+	// ItemListener接口中方法的实现按钮的状态发生改变时该方法将会被调用
+	public void itemStateChanged(ItemEvent e) {
+		if ((JCheckBox) e.getItem() == ckb1) // 判断事件源
+			if (e.getStateChange() == e.SELECTED) // 判断组件到底有没有被选中
+				red = 255;
+			else
+				red = 0;
+		if ((JCheckBox) e.getItem() == ckb2)
+			if (ckb2.isSelected()) //判断组件是否选中，选中为true否则为false
+				green = 255;
+			else
+				green = 0;
+		if ((JCheckBox) e.getSource() == ckb3)
+			if (e.getStateChange() == e.SELECTED)
+				blue = 255;
+			else
+				blue = 0;
+		lb1.setOpaque(true);// 设置标签为不透明，使标签的颜色显示出来
+		lb1.setBackground(new Color(red, green, blue));// 设置标签的背景颜色
+	}
+	public static void main(String[] arg) {
+		new JCheckBoxDemo();
+	}
+}
+【例8-4】JRadioButton组件的使用
+import java.awt.*;
+import javax.swing.*;
+import java.awt.event.*;
+public class JRadioButtonDemo extends JFrame {
+	protected JPanel topPanel;
+	private Container container;
+	public JRadioButtonDemo() {
+		container = this.getContentPane();//获取内容窗格
+		topPanel = new JPanel();
+		topPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+		// 设置边框文本提示信息
+		topPanel.setBorder(BorderFactory.createTitledBorder("借阅查询选项"));
+		JRadioButton currBorrowButton = new JRadioButton("当前借阅");
+		JRadioButton oldBorrowButton = new JRadioButton("历史借阅");
+		topPanel.add(currBorrowButton); //添加组件到面板容器
+		topPanel.add(oldBorrowButton); //添加组件到面板容器
+		// 注册事件监听程序，对ActionEvent事件作出处理
+		currBorrowButton.addActionListener(new CurrentBorrowInfoListener());
+		oldBorrowButton.addActionListener(new OldBorrowInfoListener());
+		/** 将2个RadioButton对象放进ButtonGroup中，以实现二选一 */
+		ButtonGroup buttonGroup1 = new ButtonGroup();
+		buttonGroup1.add(currBorrowButton);
+		buttonGroup1.add(oldBorrowButton);
+		this.add(BorderLayout.NORTH, topPanel); //把面板容器添加到内容窗格上
+		this.setTitle("图书管理系统我的借阅"); //设置标题
+		this.setSize(600, 450);//设置大小
+		this.setVisible(true);//设置可见性
+	}
+	class CurrentBorrowInfoListener implements ActionListener {
+		public void actionPerformed(ActionEvent event) {
+			// 把当前借阅信息从数据库取出，以表格的形式显示出来，代码实现见13章
+		}
+	}
+	class OldBorrowInfoListener implements ActionListener {
+		public void actionPerformed(ActionEvent event) {
+			 // 把历史借阅信息从数据库取出，以表格的形式显示出来，代码实现见13章
+		}
+	}
+	public static void main(String[] arg) {
+		new JRadioButtonDemo();
+	}
+}
+【例8-5】JComboBox的使用
+import java.awt.*;
+import javax.swing.*;
+import java.awt.event.*;
+public class JComboBoxDemo extends JFrame {
+	protected JLabel selectionLabel;
+	protected JComboBox fieldComboBox;
+	protected JPanel topPanel;
+	protected JButton retrievalButton;
+	protected JTextField keywordText;
+	private Container container;
+	protected String fieldSelected;
+	public JComboBoxDemo() {
+		container = this.getContentPane();
+		selectionLabel = new JLabel("检索方式"); // 标签
+		fieldComboBox = new JComboBox(); // 分类检索下拉列表
+		fieldComboBox.addItem("请选择...");
+		fieldComboBox.addItem("书名");
+		fieldComboBox.addItem("ISBN号");
+		fieldComboBox.addItem("作者");
+		fieldComboBox.addItem("出版");
+		//注册事件监听者FieldSelectedListener为内部类
+		fieldComboBox.addItemListener(new FieldSelectedListener());
+		keywordText = new JTextField("java", 20); // 显示检索关键字的文本框
+		retrievalButton = new JButton("检索"); //提交命令按钮		
+		topPanel = new JPanel();
+		topPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+		keywordText.setSize(topPanel.getWidth() / 2, topPanel.getWidth());
+		topPanel.add(selectionLabel);
+		topPanel.add(fieldComboBox);
+		topPanel.add(keywordText);
+		topPanel.add(retrievalButton);
+		//添加后面的代码JList显示检索内容
+		this.add(BorderLayout.NORTH, topPanel);
+		this.setTitle("图书管理系统图书查询");
+		this.setSize(600, 450);
+		this.setVisible(true);
+	}
+	class FieldSelectedListener implements ItemListener {
+		public void itemStateChanged(ItemEvent event) {
+			if (event.getStateChange() == ItemEvent.SELECTED) {
+				fieldSelected = (String) fieldComboBox.getSelectedItem();
+			}
+		}
+	}
+	public static void main(String[] arg) {
+		new JComboBoxDemo();
+	}
+}
+对例8-5程序只给出查询条件，当单击检索命令按钮时把满足条件的书的信息都显示出来，采用JList显示图书的详细信息，在列表中选择一行图书，可以查看该书的详细信息包括图书的详细介绍及图书馆存数情况。需要在类JComboBoxDemo添加一些成员变量和方法。
+导入包：import javax.swing.event.*;  //ListSelectionEvent事件类在该包中
+添加如下成员变量：
+protected JList bookListBox; //显示检索到的图书信息
+protected JButton detailsButton;//查看某本图书更详细信息的按钮		
+protected JScrollPane bookScrollPane // 把JList放入JScrollPane出现滚动菜单效果
+protected JPanel  bottomPanel;//中间容器
+在JComboBoxDemo类的构造方法中添加如下代码：
+//为检索按钮添加事件监听者
+retrievalButton.addActionListener(new RetrievalActionListener());
+bookListBox = new JList();
+//设置列表一次只能选择一个，不允许多选
+bookListBox.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+//为列表注册事件监听者，对用户选择改变进行处理
+bookListBox.addListSelectionListener(new BookSelectionListener());
+bookScrollPane = new JScrollPane(bookListBox);
+this.add(BorderLayout.CENTER, bookScrollPane);
+//添加显示某一本书详情的命令按钮
+detailsButton = new JButton("详细...");
+//detailsButton.addActionListener(new DetailsActionListener());
+detailsButton.setEnabled(false); //初始不可用，选择书后变为可用
+bottomPanel = new JPanel();
+bottomPanel.add(detailsButton);
+this.add(BorderLayout.SOUTH, bottomPanel);
+/*再添加两个内部类分别作为“检索”命令按钮和”图书列表”的事件监听者，对鼠标单击和用户的选择进行处理。*/
+class RetrievalActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent event) {
+			//此处实现数据库数据的检索，这里用特定信息代替相见13章
+			Object data[]={"Java耿祥义清华大学","面向对象Java 张白一 西安电子"};
+			bookListBox.setListData(data);
+		}
+	}
+class BookSelectionListener implements ListSelectionListener {
+		//当列表的选择发生变化时，执行该方法里的内容
+		public void valueChanged(ListSelectionEvent event) {
+			if (bookListBox.isSelectionEmpty()) { //判断是否选择了内容
+				detailsButton.setEnabled(false);
+			} else {
+			detailsButton.setEnabled(true); //使”详细”按钮可用，以检索书的详细信息
+			}
+		}
+	}
+在例8-4为借阅信息查询，借阅信息可以查询当前的借阅也可以查询历史信息。查询结果以表格的形式在界面上显示出来。需要对程序8-4添加如下代码。
+首先导入包 import java.util.*; // Vector在该包中
+需要在例8-4的JRadioButtonDemo类中添加两个成员变量
+protected  JScrollPane bookInLibScrollPane;// 存放借阅信息的面板
+protected  JTable borrowInfoTable; //显示借阅信息的表格
+填充“当前借阅”按钮的事件监听器类CurrentBorrowInfoListener的actionPerformed方法的内容如下：
+Vector allBorrowInfoVector = new Vector();// 存放所有的行的内容向量
+Vector rowVector1 = new Vector();// 存放第一行内容的向量	
+//为第一行的内容向量设定值，实际应从数据库读取信息放入向量，这里为测试数据
+rowVector1.add("java程序设计");
+rowVector1.add("耿祥义");
+rowVector1.add("清华大学出版社");
+rowVector1.add("09-09-08");
+rowVector1.add("09-12-08");
+rowVector1.add("");
+rowVector1.add("0");
+rowVector1.add("0");
+allBorrowInfoVector.add(rowVector1);//把第一行向量添加
+rowVector1 = new Vector();// 存放第二行向量	
+rowVector1.add("java");
+rowVector1.add("张白一");
+rowVector1.add("清华大学出版社");
+rowVector1.add("09-10-10");
+rowVector1.add("10-01-10");
+rowVector1.add("");
+rowVector1.add("0");
+rowVector1.add("0");
+allBorrowInfoVector.add(rowVector1);
+/*静态数据以上向量可以通过二维数组代替*/
+/*Object borrowinf[][]={{"java程序设计","耿祥义","清华大学出版社", "09-09-08", "09-12-08", "","0","0"},{"java","张白一","清华大学出版社","09-10-10","10-01-10","","0","0"}};*/
+Vector borrowHead = new Vector(); // 存储表头信息的向量
+borrowHead.add("书名");
+borrowHead.add("作者");
+borrowHead.add("出版");
+borrowHead.add("借阅日期");
+borrowHead.add("应还日期");
+borrowHead.add("归还日期");
+borrowHead.add("超期天数");
+borrowHead.add("罚款金额");
+/*静态数据以上向量可以通过一维数组代替*/
+/* Object tableHead[]={"书名","作者","出版","借阅日期","应还日期","归还日期","超期天数", "罚款金额"};*/
+// 生成具有内容和表头的表格
+// borrowInfoTable = new JTable(borrowinf, tableHead); //以数组数据生成表格
+borrowInfoTable = new JTable(allBorrowInfoVector, borrowHead);//以向量数据生成表格
+borrowInfoTable.setEnabled(false);//设置表格是不可编辑的，只显示信息
+borrowInfoTable.setPreferredScrollableViewportSize(new Dimension(0, 120));
+bookInLibScrollPane=new JScrollPane();
+bookInLibScrollPane.setViewportView(borrowInfoTable); //放置到滚动面板
+//设置提示信息
+bookInLibScrollPane.setBorder(BorderFactory.createTitledBorder("借阅信息"));
+add(BorderLayout.CENTER, bookInLibScrollPane); //添加到内容窗格上
+validate();//刷新窗口
+【例8-6】为图书管理系统创建系统菜单
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+public class MainFrame extends JFrame {
+	Container container;
+	public MainFrame() {
+		this.setTitle("欢迎使用图书管理系统 ");// 设置标题
+		container = this.getContentPane(); // 获取默认的内容窗格
+		container.setLayout(new BorderLayout()); // 设置布局格式
+		JMenuBar menuBar = new JMenuBar(); // 创建菜单栏
+		buildMainMenu(menuBar); // 最定义组建菜单的方法
+		this.setJMenuBar(menuBar); // 把菜单栏挂到该窗口上
+		this.show(true); // 显示窗口
+		this.setSize(600, 450); // 设置窗口大小
+	}
+	/* 构建菜单，由于篇幅有限，创建三个菜单文件、图书信息查询和帮助菜单 */
+	protected void buildMainMenu(JMenuBar menuBar) {
+		JMenu fileMenu = new JMenu("文件(F)"); // 文件菜单的创建
+		JMenuItem exitMenuItem = new JMenuItem("退出");
+		/* 为事件注册，对ActionEvent事件作出处理 */
+		exitMenuItem.addActionListener(new ExitActionListener());
+		fileMenu.add(exitMenuItem); // 把退出菜单项添加到菜单上
+		menuBar.add(fileMenu);// 文件菜单添加到菜单栏上
+		/** 建立图书信息查询菜单* */
+		JMenu libMenu = new JMenu("馆藏检索(B)");
+		libMenu.setMnemonic(KeyEvent.VK_B);// 给图书检索菜单定义助记键
+		JMenuItem libMenuItem = new JMenuItem("书目检索");
+		JMenuItem myBorrowMenuItem = new JMenuItem("我的借阅");
+		libMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L,
+		ActionEvent.CTRL_MASK));// 设定快捷键
+// 为事件注册，BookInLibraryActionListener为内部类
+		libMenuItem.addActionListener(new BookInLibraryActionListener());
+myBorrowMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M,ActionEvent.CTRL_MASK));// 设定快捷键						
+		myBorrowMenuItem.addActionListener(new MyBorrowActionListener());
+		libMenu.add(libMenuItem); // 把菜单项添加到查询菜单上
+		libMenu.add(myBorrowMenuItem);
+		menuBar.add(libMenu); // 查询菜单添加到菜单栏上
+		/* 帮助菜单的创建 */
+		JMenu helpMenu = new JMenu("帮助(H)");
+		helpMenu.setMnemonic(KeyEvent.VK_H);//给帮助菜单定义助记键
+		JMenuItem aboutMenuItem = new JMenuItem("关于");
+		aboutMenuItem.setMnemonic(KeyEvent.VK_A);
+ aboutMenuItem.addActionListener(new AboutActionListener());// 为事件注册
+		helpMenu.add(aboutMenuItem); // 把关于菜单项添加到帮助菜单上
+		menuBar.add(helpMenu); // 帮助菜单添加到菜单栏上
+	}
+	/* libMenuItem事件源的事件监听器，打开例8-16添加Jlist后的窗口 */
+	class BookInLibraryActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent event) {
+			new JComboBoxDemo();
+		}
+	}
+	/* 我的借阅的事件监听器，打开例8-16添加JTable后的窗口 */
+	class MyBorrowActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent event) {
+			new JRadioButtonDemo();
+		}
+	}
+	/* 帮助菜单中关于菜单项的事件监听者 */
+	class AboutActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent event) {
+			/* 暂时为空后加对话框 */
+		}
+	}
+	/* 文件菜单中退出菜单项的事件监听者 */
+	class ExitActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent event) {
+			dispose();
+			System.exit(0);
+		}
+	}
+	public static void main(String[] args) {
+		new MainFrame();
+	}
+}
+【例8-7】弹出式菜单的创建
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+public class JPopupMenuDemo extends JFrame {
+	JPopupMenu popMenu = new JPopupMenu();
+	public JPopupMenuDemo() {
+		Container container = this.getContentPane();
+		this.addMouseListener(new mouseLis());
+		/* 创建4个菜单项，并添加到弹出式菜单上 */
+		JMenuItem save = new JMenuItem("Save");
+		JMenuItem cut = new JMenuItem("Cut");
+		JMenuItem copy = new JMenuItem("Copy");
+		JMenuItem exit = new JMenuItem("Exit");
+		popMenu.add(save);
+		popMenu.add(cut);
+		popMenu.add(copy);
+		popMenu.addSeparator(); // 添加一个分隔线
+		popMenu.add(exit);
+		this.show(true);
+		this.setSize(600, 450);
+	}
+	class mouseLis extends MouseAdapter {
+		public void mouseClicked(MouseEvent e) {
+			if (e.getButton() == e.BUTTON3) // 判断是否点击的是鼠标右键
+			popMenu.show(e.getComponent(), e.getX(), e.getY()); // 在当前位置显示
+		}
+	}
+	public static void main(String[] args) {
+		new JPopupMenuDemo();
+		}
+}
+【例8-8】文件对话框的应用
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import java.io.*;
+public class JFileChooserDemo extends JFrame implements ActionListener {
+	JFileChooser fc = new JFileChooser(); // 创建文件对话框对象
+	JButton open, save;
+	public JFileChooserDemo() {
+		Container container = this.getContentPane();
+		container.setLayout(new FlowLayout());
+		this.setTitle("文件对话框演示程序");
+		open = new JButton("打开文件"); // 定义命令按钮
+		save = new JButton("保存文件");
+		open.addActionListener(this);// 为事件注册
+		save.addActionListener(this);
+		container.add(open); // 添加到内容窗格上
+		container.add(save);
+		this.show(true);
+		this.setSize(600, 450);
+	}
+	public static void main(String args[]) {
+		JFileChooserDemo fcd = new JFileChooserDemo();
+	}
+	public void actionPerformed(ActionEvent e) {
+		JButton button = (JButton) e.getSource(); // 得到事件源		
+		if (button == open) {// 选择的是“打开”按钮
+			int select = fc.showOpenDialog(this); // 显示打开文件对话框
+			if (select == JFileChooser.APPROVE_OPTION) { // 选择的是否为确认
+				File file = fc.getSelectedFile(); // 根据选择创建文件对象
+				// 在屏幕上显示打开文件的文件名
+				System.out.println("文件" + file.getName() + "被打开");
+			} else
+				System.out.println("打开操作被取消");
+		}		
+		if (button == save) {//选择的是“保存”按钮
+			int select = fc.showSaveDialog(this); //显示“保存”文件对话框
+			if (select == JFileChooser.APPROVE_OPTION) {
+				File file = fc.getSelectedFile();
+				System.out.println("文件" + file.getName() + "被保存");
+			} else
+				System.out.println("保存操作被取消");
+		}
+	}
+}

@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+def paser(text):
+    array = text.split(",");
+    return array
+
+
+v = paser("skdf23斤")
