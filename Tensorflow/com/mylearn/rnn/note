@@ -1,0 +1,56 @@
+[nltk_data] Error loading book: <urlopen error [Errno 8] nodename nor
+[nltk_data]     servname provided, or not known>
+Reading CSV file...
+Parsed 79170 sentences.
+Found 65751 unique words tokens.
+Using vocabulary size 8000.
+The least frequent word in our vocabulary is 'devoted' and appeared 10 times.
+
+Example sentence: 'SENTENCE_START i joined a new league this year and they have different scoring rules than i'm used to. SENTENCE_END'
+
+Example sentence after Pre-processing: '[u'SENTENCE_START', u'i', u'joined', u'a', u'new', u'league', u'this', u'year', u'and', u'they', u'have', u'different', u'scoring', u'rules', u'than', u'i', u"'m", u'used', u'to', u'.', u'SENTENCE_END']'
+x:
+SENTENCE_START what are n't you understanding about this ? !
+[0, 51, 27, 16, 10, 856, 53, 25, 34, 69]
+
+y:
+what are n't you understanding about this ? ! SENTENCE_END
+[51, 27, 16, 10, 856, 53, 25, 34, 69, 1]
+(45, 8000)
+[[ 0.00012408  0.0001244   0.00012603 ...,  0.00012515  0.00012488
+   0.00012508]
+ [ 0.00012536  0.00012582  0.00012436 ...,  0.00012482  0.00012456
+   0.00012451]
+ [ 0.00012387  0.0001252   0.00012474 ...,  0.00012559  0.00012588
+   0.00012551]
+ ..., 
+ [ 0.00012414  0.00012455  0.0001252  ...,  0.00012487  0.00012494
+   0.0001263 ]
+ [ 0.0001252   0.00012393  0.00012509 ...,  0.00012407  0.00012578
+   0.00012502]
+ [ 0.00012472  0.0001253   0.00012487 ...,  0.00012463  0.00012536
+   0.00012665]]
+(45,)
+[1284 5221 7653 7430 1013 3562 7366 4860 2212 6601 7299 4556 2481  238 2539
+   21 6548  261 1780 2005 1810 5376 4146  477 7051 4832 4991  897 3485   21
+ 7291 2007 6006  760 4864 2182 6569 2800 2752 6821 4437 7021 7875 6912 3575]
+Expected Loss for random predictions: 8.987197
+Actual loss: 8.987440
+Performing gradient check for parameter U with size 1000.
+/Users/nocml/Documents/workspace/python/Tensorflow/com/mylearn/rnn/rnn_theano_jupyter.py:171: RuntimeWarning: invalid value encountered in double_scalars
+  relative_error = np.abs(backprop_gradient - estimated_gradient)/(np.abs(backprop_gradient) + np.abs(estimated_gradient))
+Gradient check for parameter U passed.
+Performing gradient check for parameter V with size 1000.
+Gradient check for parameter V passed.
+Performing gradient check for parameter W with size 100.
+Gradient check for parameter W passed.
+2016-09-12 09:27:03: Loss after num_examples_seen=0 epoch=0: 8.987425
+2016-09-12 09:27:11: Loss after num_examples_seen=100 epoch=1: 8.976270
+2016-09-12 09:27:19: Loss after num_examples_seen=200 epoch=2: 8.960212
+2016-09-12 09:27:27: Loss after num_examples_seen=300 epoch=3: 8.930430
+2016-09-12 09:27:35: Loss after num_examples_seen=400 epoch=4: 8.862264
+2016-09-12 09:27:43: Loss after num_examples_seen=500 epoch=5: 6.913570
+2016-09-12 09:27:51: Loss after num_examples_seen=600 epoch=6: 6.302493
+2016-09-12 09:27:59: Loss after num_examples_seen=700 epoch=7: 6.014995
+2016-09-12 09:28:07: Loss after num_examples_seen=800 epoch=8: 5.833877
+2016-09-12 09:28:16: Loss after num_examples_seen=900 epoch=9: 5.710718
