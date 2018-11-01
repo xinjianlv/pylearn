@@ -26,3 +26,13 @@ out,ht = rnn_seq(x) # h0可以指定或者不指定
 # q2:out[-1]和ht[-1]是否相等？  相等！
 print(out.size())
 print(ht.size())
+
+x = torch.zeros(1,1)
+print(x)
+print(x.size())
+y = x.squeeze()
+print(y.size())
+y = x.squeeze( 0)
+print(y.size())
+y = x.squeeze(1)
+print(y.size())
