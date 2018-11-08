@@ -2,67 +2,148 @@ import torch
 import torch.nn as nn
 import numpy as np
 import torch.optim as optim
+import torch.nn.functional as F
+import random
 import pdb
 
-# torch._cudnn_rnn()
+MAX_LENGTH = 8
 
-class RNN(nn.Module):
+class RNN_Encoder(nn.Module):
 
-    def __init__(self,input_dim , hidden_dim , out_dim):
-        super(RNN,self).__init__()
+    def __init__(self,input_dim , hidden_dim):
+        super(RNN_Encoder,self).__init__()
         self._rnn = nn.RNN(input_size = input_dim , hidden_size= hidden_dim )
-        self.linear_1 = nn.Linear(input_dim , hidden_dim)
-        self.linear_2 = nn.Linear(hidden_dim , hidden_dim)
-        self.linear_3 = nn.Linear(hidden_dim, out_dim)
-
+        self.linear = nn.Linear(hidden_dim , 1)
         self.relu = nn.ReLU()
         self.hidden_size = hidden_dim
-
-    def forward(self, input , hidden_input):
+    def forward(self , input , hidden_input):
         input = input.view(1, 1, -1)
-        hy = self.relu(self.linear_1(input) + self.linear_2(hidden_input))
-        output = self.relu(self.linear_3(hy))
-        return output , hy
+        layer1 , h = self._rnn(input,hidden_input)
+        # layer2 = self.relu(self.linear(layer1))
+        return layer1 , h
 
     def init_weight(self):
-        nn.init.normal_(self.linear_1.weight.data  , 0 , np.sqrt(2 / 16))
-        nn.init.uniform_(self.linear_1.bias, 0, 0)
-
-        nn.init.normal_(self.linear_2.weight.data, 0, np.sqrt(2 / 16))
-        nn.init.uniform_(self.linear_2.bias, 0, 0)
-
-        nn.init.normal_(self.linear_3.weight.data  , 0 , np.sqrt(2 / 16))
-        nn.init.uniform_(self.linear_3.bias, 0, 0)
-
+        nn.init.normal_(self.linear.weight.data  , 0 , np.sqrt(2 / 16))
+        nn.init.uniform_(self.linear.bias, 0, 0)
     def init_hidden(self):
         return torch.zeros([1,1,self.hidden_size])
 
-def train(input_seq , target, encoder , optim , criterion ,max_length):
-    optim.zero_grad()
+
+class RNN_Decoder(nn.Module):
+
+    def __init__(self, input_size , hidden_size, output_size, max_length= MAX_LENGTH):
+        super(RNN_Decoder, self).__init__()
+        self.max_length = max_length
+        self.hidden_size = hidden_size
+        self.gru = nn.GRU(hidden_size, hidden_size)
+        self.out = nn.Linear(hidden_size, output_size)
+        self.sigmoid = nn.Sigmoid()
+        self.relu = nn.ReLU()
+        self.attn = nn.Linear(self.hidden_size * 2, self.hidden_size)
+        self.attn_combine = nn.Linear(self.hidden_size + 1, self.hidden_size)
+        self.v = nn.Parameter(torch.rand(hidden_size))
+    def score(self, hidden, encoder_outputs):
+        '''
+          :param hidden: 
+              previous hidden state of the decoder, in shape (layers*directions,B,H)
+          :param encoder_outputs:
+              encoder outputs from Encoder, in shape (T,B,H)
+          :return
+              attention energies in shape (B,T)
+          '''
+        energy = F.tanh(self.attn(torch.cat([hidden, encoder_outputs], 2)))  # [B*T*2H]->[B*T*H]
+        energy = energy.transpose(2, 1)  # [B*H*T]
+        v = self.v.repeat(encoder_outputs.data.shape[0], 1).unsqueeze(1)  # [B*1*H]
+        energy = torch.bmm(v, energy)  # [B*1*T]
+        return energy.squeeze(1)  # [B*T]
+
+    def forward(self, input, hidden, encoder_outputs):
+        max_len = encoder_outputs.size(0)
+        this_batch_size = encoder_outputs.size(1)
+        H = hidden.repeat(max_len, 1, 1).transpose(0, 1)
+        encoder_hiddens = encoder_outputs.transpose(0, 1)  # [B*T*H]
+        attn_energies = self.score( H , encoder_hiddens)
+        attn_weights = F.softmax(attn_energies).unsqueeze(1)
+
+        context = attn_weights.bmm(encoder_outputs.transpose(0, 1))  # (B,1,V)
+        context = context.transpose(0, 1)  # (1,B,V)
+        # Combine embedded input word and attended context, run through RNN
+        rnn_input = torch.cat((input, context), 2)
+        rnn_input = self.attn_combine(rnn_input) # use it in case your size of rnn_input is different
+        output, hidden = self.gru(rnn_input, hidden)
+        output = output.squeeze(0)  # (1,B,V)->(B,V)
+        # context = context.squeeze(0)
+        # update: "context" input before final layer can be problematic.
+        # output = F.log_softmax(self.out(torch.cat((output, context), 1)))
+        output = F.log_softmax(self.out(output))
+        # Return final output, hidden state
+        return output, hidden
+
+        return output, hidden
+
+    def initHidden(self):
+        return torch.zeros(1, 1, self.hidden_size)
+
+teacher_forcing_ratio = 0.5
+
+def train(input_seq , target, encoder , decoder , encoder_optimizer ,decoder_optimizer, criterion ,max_length):
+    encoder_optimizer.zero_grad()
+    decoder_optimizer.zero_grad()
     hidden = encoder.init_hidden()
-    encoder_outputs = torch.zeros(max_length)
+    # encoder_outputs = torch.zeros(max_length)
+    encoder_outputs = torch.zeros(max_length, 1 , encoder.hidden_size)
+    # encoder_hiddens = torch.zeros(max_length, encoder.hidden_size)
+    decoder_outputs = torch.zeros(max_length)
     for ndx in range(max_length):
         x_in = torch.Tensor([input_seq[0][ndx] , input_seq[1][ndx]])
         output , hidden = encoder(x_in , hidden)
-        encoder_outputs[ndx] = output[0,0]
+        encoder_outputs[ndx] = output[0]
 
-    target = torch.Tensor(target)
-    loss = criterion(encoder_outputs, target)
+    decoder_input = torch.tensor([[[0.0]]])
+
+    decoder_hidden = hidden
+
+    use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
+    loss = 0
+    if use_teacher_forcing :#use_teacher_forcing:
+        # Teacher forcing: Feed the target as the next input
+        for di in range(len(target)):
+            # decoder_input = torch.Tensor(np.array([target[di]]))
+            decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
+            decoder_outputs = decoder_output[0,0]
+            loss += criterion(decoder_output, torch.Tensor(np.array([[target[di]]])))
+            decoder_input = torch.Tensor(np.array([[[target[di]]]])).float()  # Teacher forcing
+
+    else:
+        # Without teacher forcing: use its own predictions as the next input
+        for di in range(len(target)):
+            # decoder_input = torch.Tensor(np.array([target[di]]))
+            decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden,encoder_outputs)
+            decoder_outputs = decoder_output[0, 0]
+            topv, topi = decoder_output.topk(1)
+            decoder_input = topi.repeat(1,1,1).float()  # detach from history as input
+            loss += criterion(decoder_output, torch.Tensor(np.array([[target[di]]])))
+
+
     loss.backward()
-    optim.step()
 
-    return loss , encoder_outputs
+    encoder_optimizer.step()
+    decoder_optimizer.step()
 
-def trainIter(batch_x , batch_y , encoder , max_length,learning_rate):
 
+
+    return loss.item() / len(target) , decoder_outputs
+
+def trainIter(batch_x , batch_y , encoder ,decoder, max_length,learning_rate):
     encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate)
+    decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate)
     criterion = nn.MSELoss()
     loss = 0
     predict = np.zeros([batch_size , max_length])
     for ndx in range(len(batch_x)):
-        loss_ , encoder_outputs = train(batch_x[ndx],batch_y[ndx], encoder ,encoder_optimizer,criterion, max_length)
+        loss_ , encoder_outputs = train(batch_x[ndx],batch_y[ndx], encoder ,decoder,encoder_optimizer,decoder_optimizer,criterion, max_length)
         loss += loss_
-        predict[ndx] = encoder_outputs.detach().numpy()
+        predict[ndx] = encoder_outputs[0].detach().numpy()
     return loss , predict
 
 
@@ -89,6 +170,8 @@ def getBatch( batch_size , binary_size):
         batch_y[i] = int2binary[x[i][0] + x[i][1]]
     return batch_x , batch_y , [a + b for a,b in x]
 
+
+
 def getInt(y , bit_size):
     arr = np.zeros([len(y)])
     for i in range(len(y)):
@@ -98,16 +181,20 @@ def getInt(y , bit_size):
 
 if __name__ == '__main__':
     input_size = 2
-    hidden_size = 8
+    hidden_size = 16
     batch_size = 100
-    net = RNN(input_size, hidden_size , 1)
-    net.init_weight()
-    print(net)
+    output_size = 1
+    encoder = RNN_Encoder(input_size, hidden_size)
+    decoder = RNN_Decoder(1,hidden_size , output_size)
+    encoder.init_weight()
+    print(encoder)
+    print(decoder)
     for i in range(100000):
-        net.zero_grad()
+        encoder.zero_grad()
+        decoder.zero_grad()
         h0 = torch.zeros(1, batch_size, hidden_size)
         x , y , t = getBatch(batch_size , binary_dim)
-        loss , outputs = trainIter(x , y , net , binary_dim , 0.01)
+        loss , outputs = trainIter(x , y , encoder ,decoder, binary_dim , 0.01)
         print('iterater:%d  loss:%f' % (i, loss))
         if i % 100== 0:
             output2 = np.round(outputs)

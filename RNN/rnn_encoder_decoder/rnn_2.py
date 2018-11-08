@@ -2,26 +2,23 @@ import torch
 import torch.nn as nn
 import numpy as np
 import torch.optim as optim
-import pdb
-
-# torch._cudnn_rnn()
 
 class RNN(nn.Module):
 
     def __init__(self,input_dim , hidden_dim , out_dim):
         super(RNN,self).__init__()
-        self._rnn = nn.RNN(input_size = input_dim , hidden_size= hidden_dim )
         self.linear_1 = nn.Linear(input_dim , hidden_dim)
         self.linear_2 = nn.Linear(hidden_dim , hidden_dim)
         self.linear_3 = nn.Linear(hidden_dim, out_dim)
 
         self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
         self.hidden_size = hidden_dim
 
     def forward(self, input , hidden_input):
         input = input.view(1, 1, -1)
         hy = self.relu(self.linear_1(input) + self.linear_2(hidden_input))
-        output = self.relu(self.linear_3(hy))
+        output = self.sigmoid(self.linear_3(hy))
         return output , hy
 
     def init_weight(self):
@@ -33,7 +30,6 @@ class RNN(nn.Module):
 
         nn.init.normal_(self.linear_3.weight.data  , 0 , np.sqrt(2 / 16))
         nn.init.uniform_(self.linear_3.bias, 0, 0)
-
     def init_hidden(self):
         return torch.zeros([1,1,self.hidden_size])
 
