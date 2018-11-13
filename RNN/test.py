@@ -24,15 +24,20 @@ x = Variable(torch.randn(6, 3, 5))
 out,ht = rnn_seq(x) # h0可以指定或者不指定
 # q1:这里out、ht的size是多少呢？ out:6*3*10, ht:2*3*5
 # q2:out[-1]和ht[-1]是否相等？  相等！
-print(out.size())
-print(ht.size())
 
-x = torch.zeros(1,1)
-print(x)
-print(x.size())
-y = x.squeeze()
-print(y.size())
-y = x.squeeze( 0)
-print(y.size())
-y = x.squeeze(1)
-print(y.size())
+loss = nn.CrossEntropyLoss()
+input = torch.randn(1, 2, requires_grad=True)
+target = torch.empty(1, dtype=torch.long).random_(2)
+print(input)
+print(target)
+output = loss(input, target)
+print('loss' , output)
+output.backward()
+embedding = nn.Embedding(2, 2)
+# a batch of 2 samples of 4 indices each
+input = torch.LongTensor([[0,1]])
+out = embedding(input)
+
+print(embedding)
+print(input)
+print(out)

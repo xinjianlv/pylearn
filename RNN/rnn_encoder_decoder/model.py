@@ -23,7 +23,7 @@ class RNN_Encoder(nn.Module):
         return layer1 , h
 
     def init_weight(self):
-        nn.init.normal_(self.linear.weight.data  , 0 , np.sqrt(2 / 16))
+        nn.init.normal_(self.linear.weight.data  , 0 , np.sqrt(2 / self.hidden_size))
         nn.init.uniform_(self.linear.bias, 0, 0)
     def init_hidden(self):
         return torch.zeros([1,1,self.hidden_size])
@@ -38,9 +38,9 @@ class RNN_Decoder(nn.Module):
         self.gru = nn.GRU(hidden_size, hidden_size)
         self.out = nn.Linear(hidden_size, output_size)
         self.sigmoid = nn.Sigmoid()
-        self.relu = nn.ReLU()
+        # self.relu = nn.ReLU()
         self.attn = nn.Linear(self.hidden_size * 2, self.hidden_size)
-        self.attn_combine = nn.Linear(self.hidden_size + 1, self.hidden_size)
+        self.attn_combine = nn.Linear(self.hidden_size + input_size, self.hidden_size)
         self.v = nn.Parameter(torch.rand(hidden_size))
     def score(self, hidden, encoder_outputs):
         '''
@@ -75,13 +75,17 @@ class RNN_Decoder(nn.Module):
         # context = context.squeeze(0)
         # update: "context" input before final layer can be problematic.
         # output = F.log_softmax(self.out(torch.cat((output, context), 1)))
-        output = F.log_softmax(self.out(output))
+
+        output = self.sigmoid(self.out(output))
         # Return final output, hidden state
         return output, hidden
 
-        return output, hidden
+    def init_weight(self):
+        nn.init.normal_(self.out.weight.data, 0, np.sqrt(2 / self.hidden_size))
+        nn.init.uniform_(self.out.bias, 0, 0)
 
     def initHidden(self):
+
         return torch.zeros(1, 1, self.hidden_size)
 
 teacher_forcing_ratio = 0.5
@@ -99,7 +103,7 @@ def train(input_seq , target, encoder , decoder , encoder_optimizer ,decoder_opt
         output , hidden = encoder(x_in , hidden)
         encoder_outputs[ndx] = output[0]
 
-    decoder_input = torch.tensor([[[0.0]]])
+    decoder_input = torch.tensor([[[0.0 , 0.0]]])
 
     decoder_hidden = hidden
 
@@ -111,8 +115,10 @@ def train(input_seq , target, encoder , decoder , encoder_optimizer ,decoder_opt
             # decoder_input = torch.Tensor(np.array([target[di]]))
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
             decoder_outputs = decoder_output[0,0]
-            loss += criterion(decoder_output, torch.Tensor(np.array([[target[di]]])))
-            decoder_input = torch.Tensor(np.array([[[target[di]]]])).float()  # Teacher forcing
+            loss += criterion(decoder_output, torch.Tensor(np.array([target[di]])).long())
+            arr = np.zeros([1,1,2],dtype=np.int)
+            arr[0][0][int(target[di])] = 1
+            decoder_input = torch.Tensor(arr).float()  # Teacher forcing
 
     else:
         # Without teacher forcing: use its own predictions as the next input
@@ -120,13 +126,12 @@ def train(input_seq , target, encoder , decoder , encoder_optimizer ,decoder_opt
             # decoder_input = torch.Tensor(np.array([target[di]]))
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden,encoder_outputs)
             decoder_outputs = decoder_output[0, 0]
-            topv, topi = decoder_output.topk(1)
+            topi = decoder_output[0]
             decoder_input = topi.repeat(1,1,1).float()  # detach from history as input
-            loss += criterion(decoder_output, torch.Tensor(np.array([[target[di]]])))
-
+            loss += criterion(decoder_output, torch.Tensor(np.array([target[di]])).long())
+            #criterion(decoder_output, torch.Tensor(np.array([target[di]])).long())
 
     loss.backward()
-
     encoder_optimizer.step()
     decoder_optimizer.step()
 
@@ -137,7 +142,7 @@ def train(input_seq , target, encoder , decoder , encoder_optimizer ,decoder_opt
 def trainIter(batch_x , batch_y , encoder ,decoder, max_length,learning_rate):
     encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate)
     decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate)
-    criterion = nn.MSELoss()
+    criterion = nn.CrossEntropyLoss()#nn.MSELoss()
     loss = 0
     predict = np.zeros([batch_size , max_length])
     for ndx in range(len(batch_x)):
@@ -183,9 +188,10 @@ if __name__ == '__main__':
     input_size = 2
     hidden_size = 16
     batch_size = 100
-    output_size = 1
+    output_size = 2
     encoder = RNN_Encoder(input_size, hidden_size)
-    decoder = RNN_Decoder(1,hidden_size , output_size)
+    decoder = RNN_Decoder(output_size,hidden_size , output_size)
+    decoder.init_weight()
     encoder.init_weight()
     print(encoder)
     print(decoder)
@@ -194,12 +200,13 @@ if __name__ == '__main__':
         decoder.zero_grad()
         h0 = torch.zeros(1, batch_size, hidden_size)
         x , y , t = getBatch(batch_size , binary_dim)
-        loss , outputs = trainIter(x , y , encoder ,decoder, binary_dim , 0.01)
+        loss , outputs = trainIter(x , y , encoder ,decoder, 5 , 0.001)
         print('iterater:%d  loss:%f' % (i, loss))
         if i % 100== 0:
             output2 = np.round(outputs)
-            result = getInt(output2,binary_dim)
-            print(t ,'\n', result)
+            # pdb.set_trace()
+            # result = getInt(output2,binary_dim)
+            # print(t ,'\n', result)
 
             print('iterater:%d  loss:%f'%(i , loss))
 
