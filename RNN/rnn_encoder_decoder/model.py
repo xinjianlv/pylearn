@@ -35,9 +35,11 @@ class RNN_Decoder(nn.Module):
         super(RNN_Decoder, self).__init__()
         self.max_length = max_length
         self.hidden_size = hidden_size
-        self.gru = nn.GRU(hidden_size, hidden_size)
+        self.input_size = input_size
+        self.gru = nn.GRU(hidden_size + input_size, hidden_size)
         self.out = nn.Linear(hidden_size, output_size)
         self.sigmoid = nn.Sigmoid()
+        self.softmax = nn.Softmax()
         # self.relu = nn.ReLU()
         self.attn = nn.Linear(self.hidden_size * 2, self.hidden_size)
         self.attn_combine = nn.Linear(self.hidden_size + input_size, self.hidden_size)
@@ -62,21 +64,25 @@ class RNN_Decoder(nn.Module):
         this_batch_size = encoder_outputs.size(1)
         H = hidden.repeat(max_len, 1, 1).transpose(0, 1)
         encoder_hiddens = encoder_outputs.transpose(0, 1)  # [B*T*H]
+
         attn_energies = self.score( H , encoder_hiddens)
-        attn_weights = F.softmax(attn_energies).unsqueeze(1)
+
+        attn_weights = F.softmax(attn_energies,dim=1).unsqueeze(1)
 
         context = attn_weights.bmm(encoder_outputs.transpose(0, 1))  # (B,1,V)
+
         context = context.transpose(0, 1)  # (1,B,V)
         # Combine embedded input word and attended context, run through RNN
         rnn_input = torch.cat((input, context), 2)
-        rnn_input = self.attn_combine(rnn_input) # use it in case your size of rnn_input is different
+        # rnn_input = self.attn_combine(rnn_input) # use it in case your size of rnn_input is different
+        # pdb.set_trace()
         output, hidden = self.gru(rnn_input, hidden)
         output = output.squeeze(0)  # (1,B,V)->(B,V)
         # context = context.squeeze(0)
         # update: "context" input before final layer can be problematic.
         # output = F.log_softmax(self.out(torch.cat((output, context), 1)))
-
-        output = self.sigmoid(self.out(output))
+        # pdb.set_trace()
+        output = self.softmax(self.out(output))
         # Return final output, hidden state
         return output, hidden
 
@@ -93,11 +99,13 @@ teacher_forcing_ratio = 0.5
 def train(input_seq , target, encoder , decoder , encoder_optimizer ,decoder_optimizer, criterion ,max_length):
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
+    encoder.zero_grad()
+    decoder.zero_grad()
     hidden = encoder.init_hidden()
     # encoder_outputs = torch.zeros(max_length)
-    encoder_outputs = torch.zeros(max_length, 1 , encoder.hidden_size)
+    encoder_outputs = torch.zeros(encoder.hidden_size, 1 , encoder.hidden_size)
     # encoder_hiddens = torch.zeros(max_length, encoder.hidden_size)
-    decoder_outputs = torch.zeros(max_length)
+    decoder_outputs = torch.zeros(decoder.hidden_size , decoder.input_size)
     for ndx in range(max_length):
         x_in = torch.Tensor([input_seq[0][ndx] , input_seq[1][ndx]])
         output , hidden = encoder(x_in , hidden)
@@ -114,8 +122,8 @@ def train(input_seq , target, encoder , decoder , encoder_optimizer ,decoder_opt
         for di in range(len(target)):
             # decoder_input = torch.Tensor(np.array([target[di]]))
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
-            decoder_outputs = decoder_output[0,0]
-            loss += criterion(decoder_output, torch.Tensor(np.array([target[di]])).long())
+            decoder_outputs[di] = decoder_output[0]
+            # loss += criterion(decoder_output, torch.Tensor(np.array([target[di]])).long())
             arr = np.zeros([1,1,2],dtype=np.int)
             arr[0][0][int(target[di])] = 1
             decoder_input = torch.Tensor(arr).float()  # Teacher forcing
@@ -125,30 +133,34 @@ def train(input_seq , target, encoder , decoder , encoder_optimizer ,decoder_opt
         for di in range(len(target)):
             # decoder_input = torch.Tensor(np.array([target[di]]))
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden,encoder_outputs)
-            decoder_outputs = decoder_output[0, 0]
+            decoder_outputs[di] = decoder_output[0]
             topi = decoder_output[0]
             decoder_input = topi.repeat(1,1,1).float()  # detach from history as input
-            loss += criterion(decoder_output, torch.Tensor(np.array([target[di]])).long())
-            #criterion(decoder_output, torch.Tensor(np.array([target[di]])).long())
+            # loss += criterion(decoder_output, torch.Tensor(np.array([target[di]])).long())
 
+            #criterion(decoder_output, torch.Tensor(np.array([target[di]])).long())
+    loss = criterion(decoder_outputs , torch.Tensor(target).long())
+    indices = torch.argmax(decoder_outputs , dim=1)
     loss.backward()
     encoder_optimizer.step()
     decoder_optimizer.step()
 
 
 
-    return loss.item() / len(target) , decoder_outputs
+    return loss.item() / len(target) , indices
 
 def trainIter(batch_x , batch_y , encoder ,decoder, max_length,learning_rate):
     encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate)
     decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate)
+    encoder.zero_grad()
+    decoder.zero_grad()
     criterion = nn.CrossEntropyLoss()#nn.MSELoss()
     loss = 0
-    predict = np.zeros([batch_size , max_length])
+    predict = np.zeros([batch_size , len(batch_y[0])])
     for ndx in range(len(batch_x)):
         loss_ , encoder_outputs = train(batch_x[ndx],batch_y[ndx], encoder ,decoder,encoder_optimizer,decoder_optimizer,criterion, max_length)
         loss += loss_
-        predict[ndx] = encoder_outputs[0].detach().numpy()
+        predict[ndx] = encoder_outputs.detach().numpy()
     return loss , predict
 
 
@@ -196,17 +208,14 @@ if __name__ == '__main__':
     print(encoder)
     print(decoder)
     for i in range(100000):
-        encoder.zero_grad()
-        decoder.zero_grad()
+
         h0 = torch.zeros(1, batch_size, hidden_size)
         x , y , t = getBatch(batch_size , binary_dim)
         loss , outputs = trainIter(x , y , encoder ,decoder, 5 , 0.001)
         print('iterater:%d  loss:%f' % (i, loss))
         if i % 100== 0:
-            output2 = np.round(outputs)
-            # pdb.set_trace()
-            # result = getInt(output2,binary_dim)
-            # print(t ,'\n', result)
+            result = getInt(outputs,binary_dim)
+            print(t ,'\n', result)
 
             print('iterater:%d  loss:%f'%(i , loss))
 
