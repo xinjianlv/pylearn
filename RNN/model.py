@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import torch.optim as optim
+from tensorboardX import SummaryWriter
 import pdb
 
 class RNN(nn.Module):
@@ -81,7 +82,11 @@ if __name__ == '__main__':
     optimizer = optim.Adam(net.parameters(), lr=0.01, weight_decay=1e-4)
     loss_function = nn.MSELoss()#.CrossEntropyLoss()
     h = torch.Tensor(1,batch_size ,hidden_size)
-    for i in range(100000):
+    writer = SummaryWriter()
+
+
+    in_x = None
+    for i in range(1000):
         net.zero_grad()
         x ,y , t = getBatch(batch_size)
         in_x = torch.Tensor(x)
@@ -90,10 +95,13 @@ if __name__ == '__main__':
         loss = loss_function(output , y)
         loss.backward()
         optimizer.step()
-
+        writer.add_scalar('scalar/test' ,loss,i)
         if i % 100== 0:
             output2 = torch.round(output)
             result = getInt(output2,binary_dim)
             print(t , result)
             print('iterater:%d  loss:%f'%(i , loss))
 
+    # writer.add_graph(net,(in_x,),True)
+    #
+    # writer.close()
