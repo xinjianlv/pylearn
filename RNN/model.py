@@ -91,6 +91,8 @@ if __name__ == '__main__':
         x ,y , t = getBatch(batch_size)
         in_x = torch.Tensor(x)
         y = torch.Tensor(y)
+        # print(in_x.shape)
+        # pdb.set_trace()
         output , h2 = net(in_x)
         loss = loss_function(output , y)
         loss.backward()
